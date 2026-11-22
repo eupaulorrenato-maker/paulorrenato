@@ -1,6 +1,5 @@
 import {
   PROFILE,
-  TYPING_ROLES,
   EDUCATION,
   BRANDS,
   SPECIALTIES,
@@ -9,44 +8,29 @@ import {
   PORTFOLIO_CATEGORIES,
   PORTFOLIO_BUTTONS
 } from "./data.js";
-import { initShell, esc, iconSvg, copyText } from "./shell.js";
+import {
+  initShell,
+  esc,
+  iconSvg,
+  hexStampSvg,
+  globeWatermarkSvg,
+  heroSculptureSvg,
+  voxelCubeSvg,
+  boltCapsuleSvg,
+  copyText
+} from "./shell.js";
 
-function startTyping(el) {
+const SPEC_ICONS = ["web", "compass", "search", "sliders", "mail", "pen", "spark"];
+const HERO_WORDS = ["sites.", "funis.", "anúncios.", "negócios."];
+
+function startHeroWordRotation() {
+  const el = document.getElementById("hero-rot-word");
   if (!el) return;
-  const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (prefersReduced) {
-    el.textContent = TYPING_ROLES[0];
-    return;
-  }
-
-  let wordIdx = 0;
-  let charIdx = 0;
-  let deleting = false;
-
-  function tick() {
-    const word = TYPING_ROLES[wordIdx];
-    if (!deleting) {
-      charIdx++;
-      el.textContent = word.slice(0, charIdx);
-      if (charIdx >= word.length) {
-        deleting = true;
-        setTimeout(tick, 1500);
-        return;
-      }
-      setTimeout(tick, 55);
-    } else {
-      charIdx--;
-      el.textContent = word.slice(0, charIdx);
-      if (charIdx <= 0) {
-        deleting = false;
-        wordIdx = (wordIdx + 1) % TYPING_ROLES.length;
-        setTimeout(tick, 280);
-        return;
-      }
-      setTimeout(tick, 32);
-    }
-  }
-  tick();
+  let idx = 0;
+  setInterval(() => {
+    idx = (idx + 1) % HERO_WORDS.length;
+    el.textContent = HERO_WORDS[idx];
+  }, 2400);
 }
 
 function bindCarousel(trackId, prevBtnId, nextBtnId, counterId, totalCount) {
@@ -58,8 +42,8 @@ function bindCarousel(trackId, prevBtnId, nextBtnId, counterId, totalCount) {
 
   function getStep() {
     const firstCard = track.firstElementChild;
-    if (!firstCard) return 320;
-    const gap = parseFloat(getComputedStyle(track).columnGap || getComputedStyle(track).gap || "18") || 18;
+    if (!firstCard) return 300;
+    const gap = parseFloat(getComputedStyle(track).columnGap || getComputedStyle(track).gap || "16") || 16;
     return firstCard.getBoundingClientRect().width + gap;
   }
 
@@ -98,256 +82,593 @@ function bindCarousel(trackId, prevBtnId, nextBtnId, counterId, totalCount) {
   updateCounter();
 }
 
-function chevronSvg(dir) {
-  const pts = dir === "left" ? "15 18 9 12 15 6" : "9 18 15 12 9 6";
-  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="${pts}"/></svg>`;
+function mountWizardForm(containerId) {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+
+  const state = {
+    step: 1,
+    name: "",
+    focus: "Construção de Site / LP",
+    goal: ""
+  };
+
+  const focusOptions = [
+    "Construção de Site / LP",
+    "SEO, GEO & Meu Negócio",
+    "CRO & Testes A/B",
+    "Copywriting & Conteúdo"
+  ];
+
+  function buildWaHref() {
+    const lines = ["Olá Paulo Renato!"];
+    if (state.name) lines.push(`Meu nome é ${state.name}.`);
+    if (state.focus) lines.push(`Frente principal: ${state.focus}.`);
+    if (state.goal) lines.push(`Objetivo: ${state.goal}`);
+    return `${PROFILE.whatsappUrl}?text=${encodeURIComponent(lines.join("\n"))}`;
+  }
+
+  function render() {
+    const barsHtml = [1, 2, 3, 4]
+      .map((n) => `<span class="hc-progress-seg ${n <= state.step ? "is-filled" : ""}"></span>`)
+      .join("");
+
+    let bodyHtml = "";
+    if (state.step === 1) {
+      bodyHtml = `
+        <div class="hc-form-question">Como posso te chamar?</div>
+        <input type="text" id="${containerId}-input" class="hc-input" value="${esc(state.name)}" placeholder="Digite seu nome ou empresa">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button type="button" class="hc-btn-amber" id="${containerId}-next">
+            <span>Continuar</span>
+            ${iconSvg("arrow")}
+          </button>
+        </div>
+      `;
+    } else if (state.step === 2) {
+      bodyHtml = `
+        <div class="hc-form-question">Qual frente você quer destravar?</div>
+        <div class="hc-choice-grid">
+          ${focusOptions
+            .map(
+              (opt) =>
+                `<button type="button" class="hc-choice-btn ${state.focus === opt ? "is-selected" : ""}" data-wiz-opt="${esc(opt)}">${esc(opt)}</button>`
+            )
+            .join("")}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button type="button" class="hc-btn-amber" id="${containerId}-next">
+            <span>Continuar</span>
+            ${iconSvg("arrow")}
+          </button>
+          <button type="button" class="hc-btn-outline-light" id="${containerId}-prev">Voltar</button>
+        </div>
+      `;
+    } else if (state.step === 3) {
+      bodyHtml = `
+        <div class="hc-form-question">Conte em uma linha sua meta principal</div>
+        <input type="text" id="${containerId}-goal" class="hc-input" value="${esc(state.goal)}" placeholder="Ex: criar site novo, subir no Google, vender mais">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button type="button" class="hc-btn-amber" id="${containerId}-next">
+            <span>Continuar</span>
+            ${iconSvg("arrow")}
+          </button>
+          <button type="button" class="hc-btn-outline-light" id="${containerId}-prev">Voltar</button>
+        </div>
+      `;
+    } else {
+      bodyHtml = `
+        <div class="hc-form-question">Tudo pronto, ${esc(state.name || "vamos conversar")}.</div>
+        <p style="font-size:0.86rem;color:var(--muted)">Frente selecionada: <strong style="color:var(--ink)">${esc(state.focus)}</strong></p>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          <a class="hc-btn-amber" href="${esc(buildWaHref())}" target="_blank" rel="noopener noreferrer">
+            <span>Enviar no WhatsApp</span>
+            ${iconSvg("arrow")}
+          </a>
+          <button type="button" class="hc-btn-outline-light" id="${containerId}-reset">Recomeçar</button>
+        </div>
+      `;
+    }
+
+    wrap.innerHTML = `
+      <div class="hc-form-profile">
+        <img class="hc-form-photo" src="${esc(PROFILE.photo)}" alt="${esc(PROFILE.name)}">
+        <div>
+          <div class="hc-kicker" style="color:var(--ink)">FALE DIRETO COM PAULO RENATO</div>
+          <div style="font-size:0.84rem;color:var(--muted);margin-top:2px">Estratégia, sites, SEO/GEO, CRO e copy no Brasil e EUA.</div>
+        </div>
+      </div>
+
+      <div class="hc-progress-row">
+        <div class="hc-progress-bars">${barsHtml}</div>
+        <span class="hc-progress-count">${state.step} de 4</span>
+      </div>
+
+      ${bodyHtml}
+    `;
+
+    const nameInput = document.getElementById(`${containerId}-input`);
+    nameInput?.addEventListener("input", () => {
+      state.name = nameInput.value.trim();
+    });
+    nameInput?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        state.step = 2;
+        render();
+      }
+    });
+
+    const goalInput = document.getElementById(`${containerId}-goal`);
+    goalInput?.addEventListener("input", () => {
+      state.goal = goalInput.value.trim();
+    });
+    goalInput?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        state.step = 4;
+        render();
+      }
+    });
+
+    wrap.querySelectorAll("[data-wiz-opt]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        state.focus = btn.getAttribute("data-wiz-opt");
+        render();
+      });
+    });
+
+    document.getElementById(`${containerId}-next`)?.addEventListener("click", () => {
+      state.step = Math.min(4, state.step + 1);
+      render();
+    });
+
+    document.getElementById(`${containerId}-prev`)?.addEventListener("click", () => {
+      state.step = Math.max(1, state.step - 1);
+      render();
+    });
+
+    document.getElementById(`${containerId}-reset`)?.addEventListener("click", () => {
+      state.step = 1;
+      render();
+    });
+  }
+
+  render();
 }
 
 function renderHome(root) {
   root.innerHTML = `
-    <section class="hero-stage" aria-label="Apresentação">
-      <div class="portrait-wrap">
-        <div class="portrait-glow"></div>
-        <img class="portrait-img" src="${esc(PROFILE.photo)}" alt="${esc(PROFILE.name)}">
-      </div>
+    <div class="hc-container">
+      <section class="hc-hero" aria-label="Apresentação principal">
+        <div class="hc-hero-left">
+          ${hexStampSvg()}
 
-      <h1 class="hero-h1">Olá, eu sou <span class="gradient-text">${esc(PROFILE.name)}.</span></h1>
+          <h1 class="hc-h1">
+            Estratégia, dados e copy que aceleram seus <span id="hero-rot-word" class="hc-highlight-word">sites.</span>
+          </h1>
 
-      <p class="typing-line">Atuo com <span id="hero-typing" class="typing-word">${esc(TYPING_ROLES[0])}</span><span class="typing-cursor">|</span></p>
+          <p class="hc-lead" style="max-width:46ch">
+            Visão analítica de produto digital somada à escrita criativa voltada a resultado. Projetos no Brasil e nos Estados Unidos.
+          </p>
 
-      <div class="hero-ctas">
-        <a class="pill-btn" href="portfolio.html">
-          <span>Ver portfólio</span>
-          ${iconSvg("grid")}
-        </a>
-        <a class="pill-btn pill-btn--secondary" href="contato.html">
-          <span>Fale comigo</span>
-          ${iconSvg("mail")}
-        </a>
-      </div>
+          <a class="hc-split-banner" href="portfolio.html">
+            <div class="hc-split-left">
+              <span class="hc-live-pill"><span class="hc-live-dot"></span>ATIVO</span>
+              <div class="hc-split-meta">
+                <span class="hc-split-title">Portfólio Completo</span>
+                <span class="hc-split-sub">23 projetos publicados · +600 artigos</span>
+                <span class="hc-split-chip">BR &amp; EUA · UFS</span>
+              </div>
+            </div>
+            <div class="hc-split-right">
+              <span>VER PROJETOS</span>
+              <span style="margin-left:6px">${iconSvg("arrow")}</span>
+            </div>
+          </a>
+        </div>
 
-      <div class="status-pill">
-        <span class="status-dot" aria-hidden="true"></span>
-        <span>${esc(PROFILE.heroStatus)}</span>
+        <div class="hc-hero-right">
+          <div class="hc-sculpture-bg">${heroSculptureSvg()}</div>
+          <div class="hc-glass-form" id="hero-wizard-card"></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="hc-brands-strip" aria-label="Marcas atendidas">
+      <div class="hc-brands-inner">
+        <span class="hc-kicker">MARCAS E CONTAS COM QUE JÁ TRABALHEI</span>
+        <div class="hc-brands-row">
+          ${BRANDS.slice(0, 8)
+            .map((b) => `<span class="hc-brand-logo">${esc(b)}</span>`)
+            .join("")}
+        </div>
       </div>
     </section>
 
-    <div class="content-backdrop">
-      <div class="container">
-        <section class="section-head">
-          <span class="section-eyebrow">Visão Geral</span>
-          <h2 class="section-title">Estratégia que gera venda.</h2>
-          <p class="section-lead">${esc(PROFILE.intro)}</p>
-          <div style="margin-top:8px">
-            <a class="pill-btn pill-btn--sm" href="quem-sou.html">Conhecer minha história</a>
-          </div>
-        </section>
+    <div class="hc-container">
+      <!-- BENTO SECTION (Mirrors 'Como ensinamos') -->
+      <section class="hc-section" id="como-atuamos">
+        <div class="hc-section-head">
+          <span class="hc-kicker">COMO EU ATUO</span>
+          <h2 class="hc-h2" style="max-width:18ch">Produto, mídia e site falando a mesma língua.</h2>
+        </div>
 
-        <section style="display:flex;flex-direction:column;gap:20px">
-          <div class="carousel-header">
-            <div class="section-head">
-              <span class="section-eyebrow">Especialidades</span>
-              <h2 class="section-title">O que eu coloco no ar</h2>
+        <div class="hc-bento-grid">
+          <div class="hc-bento-left">
+            <article class="hc-card-problem">
+              <span class="hc-pill-tag hc-pill-tag--white">! O problema</span>
+              <h3 class="hc-h3">Site, anúncio e conteúdo separados</h3>
+              <p class="hc-plugin-desc">Tráfego pago rodando, página lenta e texto sem força de venda. O visitante chega e sai sem converter.</p>
+            </article>
+
+            <article class="hc-card-light" style="flex:1">
+              <span class="hc-pill-tag">O método</span>
+              <h3 class="hc-h3">Diagnóstico &amp; CRO</h3>
+              <p class="hc-plugin-desc">Leitura de funil no GA4, Search Console e Microsoft Clarity, com hipóteses claras e Testes A/B em quatro etapas.</p>
+              ${globeWatermarkSvg()}
+            </article>
+          </div>
+
+          <article class="hc-card-light hc-card-tall">
+            <span class="hc-pill-tag">A execução</span>
+            <div style="margin:28px 0">
+              <div class="hc-h2--giant">Growth &amp; Copy</div>
+              <p class="hc-lead" style="margin-top:16px;max-width:38ch;color:var(--ink-soft)">
+                Construção de sites rápidos, SEO técnico, GEO, Google Meu Negócio, automação de CRM e copywriting em português e inglês.
+              </p>
             </div>
-            <div class="carousel-controls">
-              <button type="button" class="carousel-btn" id="spec-prev" aria-label="Voltar item">${chevronSvg("left")}</button>
-              <span class="carousel-counter" id="spec-counter">1 / ${SPECIALTIES.length}</span>
-              <button type="button" class="carousel-btn" id="spec-next" aria-label="Avançar item">${chevronSvg("right")}</button>
-            </div>
-          </div>
+            ${globeWatermarkSvg()}
+          </article>
+        </div>
 
-          <div class="carousel-track carousel-track--specialties" id="spec-track">
-            ${SPECIALTIES.map(
-              (sp) => `
-              <article class="glass-card">
-                <span class="tag-pill" style="align-self:flex-start">${esc(sp.tag)}</span>
-                <h3 class="card-title">${esc(sp.title)}</h3>
-                <p class="card-text">${esc(sp.summary)}</p>
-              </article>
-            `
-            ).join("")}
-          </div>
-
-          <div>
-            <a class="pill-btn pill-btn--sm" href="especialidades.html">Ver stack e detalhes</a>
-          </div>
-        </section>
-
-        <section style="display:flex;flex-direction:column;gap:20px">
-          <div class="carousel-header">
-            <div class="section-head">
-              <span class="section-eyebrow">Portfólio Direto</span>
-              <h2 class="section-title">Acesso rápido aos projetos</h2>
-              <p class="section-lead">Clique e vá direto ao trabalho publicado.</p>
-            </div>
-            <div class="carousel-controls">
-              <button type="button" class="carousel-btn" id="port-prev" aria-label="Voltar item">${chevronSvg("left")}</button>
-              <span class="carousel-counter" id="port-counter">1 / ${PORTFOLIO_BUTTONS.length}</span>
-              <button type="button" class="carousel-btn" id="port-next" aria-label="Avançar item">${chevronSvg("right")}</button>
-            </div>
-          </div>
-
-          <div class="carousel-track carousel-track--portfolio" id="port-track">
-            ${PORTFOLIO_BUTTONS.map(
-              (item) => `
-              <a class="portfolio-link-btn" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">
-                <div class="portfolio-link-info">
-                  <span class="portfolio-link-title">${esc(item.label)}</span>
-                  <span class="portfolio-link-meta">${esc(item.meta)}</span>
-                </div>
-                <span class="portfolio-link-arrow" aria-hidden="true">${iconSvg("arrow")}</span>
+        <div class="hc-bento-bottom">
+          <article class="hc-card-light">
+            <span class="hc-starburst">BR &amp;<br>EUA</span>
+            <h3 class="hc-h3">Portfólio Publicado</h3>
+            <span class="hc-plugin-meta">23 links diretos · 34 projetos no Behance</span>
+            <p style="font-size:0.92rem;font-weight:600;margin-top:6px">Campanhas, vídeos, landing pages e artigos em produção.</p>
+            <p class="hc-plugin-desc">Acesso direto aos trabalhos reais desenvolvidos no Brasil e no mercado norte-americano.</p>
+            <div style="margin-top:10px">
+              <a class="hc-btn-amber" href="portfolio.html">
+                <span>Abrir Portfólio</span>
+                ${iconSvg("arrow")}
               </a>
-            `
-            ).join("")}
+            </div>
+          </article>
+
+          <article class="hc-card-light">
+            <h3 class="hc-h3">Trajetória &amp; Formação</h3>
+            <span class="hc-plugin-meta">9 experiências · Publicidade e Propaganda (UFS)</span>
+            <p style="font-size:0.92rem;font-weight:600;margin-top:6px">Agências, produto digital, setor público e consultoria.</p>
+            <p class="hc-plugin-desc">Passagens por MO4 Web, Instituto Empresariar, Escobar (EUA), Brand.it, Anova, Fullbar, Prefeitura de Aracaju e Search One Digital.</p>
+            <div style="margin-top:auto;padding-top:10px">
+              <a class="hc-underline-link" href="experiencia.html">
+                <span>Conhecer trajetória completa</span>
+                ${iconSvg("arrow")}
+              </a>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- DARK SPOTLIGHT BLOCK (Mirrors 'Fundamentos') -->
+      <section class="hc-dark-block" id="metodo">
+        <div class="hc-dark-top">
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <span class="hc-pill-tag hc-pill-tag--white">MÉTODO NA PRÁTICA</span>
+            <h2 class="hc-h2" style="color:#FFFFFF;max-width:16ch">Do código da página ao texto que fecha a venda.</h2>
+            <p style="color:var(--muted-light);max-width:48ch">
+              Você não precisa contratar cinco pontas desconectadas. Uno arquitetura web, busca orgânica, dados de conversão e redação publicitária.
+            </p>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:4px">
+              <a class="hc-btn-amber" href="${esc(PROFILE.whatsappUrl)}" target="_blank" rel="noopener noreferrer">
+                <span>Chamar no WhatsApp</span>
+                ${iconSvg("arrow")}
+              </a>
+              <a class="hc-btn-outline-dark" href="quem-sou.html">
+                <span>Quem Sou Eu</span>
+                ${iconSvg("arrow")}
+              </a>
+            </div>
+          </div>
+          <div>${voxelCubeSvg()}</div>
+        </div>
+
+        <div class="hc-dark-inner-grid">
+          <div class="hc-dark-card">
+            <div class="hc-num-list">
+              <div class="hc-num-row">
+                <span class="hc-num-index">01</span>
+                <div>
+                  <div class="hc-num-title">Diagnóstico de funil e dados</div>
+                  <div class="hc-num-desc">GA4, Search Console e mapas de calor no Microsoft Clarity.</div>
+                </div>
+              </div>
+              <div class="hc-num-row">
+                <span class="hc-num-index">02</span>
+                <div>
+                  <div class="hc-num-title">Construção de sites e landing pages</div>
+                  <div class="hc-num-desc">Páginas rápidas, responsivas e desenhadas com foco em conversão.</div>
+                </div>
+              </div>
+              <div class="hc-num-row">
+                <span class="hc-num-index">03</span>
+                <div>
+                  <div class="hc-num-title">SEO Técnico, GEO e Google Meu Negócio</div>
+                  <div class="hc-num-desc">Posicionamento no Google, nas respostas de IA e nas buscas locais.</div>
+                </div>
+              </div>
+              <div class="hc-num-row">
+                <span class="hc-num-index">04</span>
+                <div>
+                  <div class="hc-num-title">Inbound Marketing, CRM e Agentes de IA</div>
+                  <div class="hc-num-desc">HubSpot, RD Station e automação de rotinas com Skills e MCP.</div>
+                </div>
+              </div>
+              <div class="hc-num-row">
+                <span class="hc-num-index">05</span>
+                <div>
+                  <div class="hc-num-title">Copywriting BR/EUA e experimentos A/B</div>
+                  <div class="hc-num-desc">Anúncios em Meta/Google Ads, roteiros e +600 artigos publicados.</div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <a class="pill-btn pill-btn--accent pill-btn--sm" href="portfolio.html">Abrir página com filtros e busca</a>
+          <div class="hc-dark-card">
+            <div style="font-size:1.05rem;font-weight:500;color:#FFFFFF">O que entra na entrega</div>
+            <ul class="hc-check-list">
+              <li class="hc-check-item"><span class="hc-check-box"></span><span>Visão de Product Owner (ClickUp, User Stories e Figma).</span></li>
+              <li class="hc-check-item"><span class="hc-check-box"></span><span>Escrita humana, direta e livre de clichês artificiais.</span></li>
+              <li class="hc-check-item"><span class="hc-check-box"></span><span>Experiência comprovada em contas globais e setor público.</span></li>
+              <li class="hc-check-item is-struck"><span class="hc-check-box"></span><span>Textão genérico sem meta de negócio.</span></li>
+            </ul>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
+
+      <!-- MID-GRAY CONTAINER: ESPECIALIDADES CAROUSEL (Mirrors 'Growth System™') -->
+      <section class="hc-mid-block" id="especialidades-home">
+        <div class="hc-carousel-head">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span class="hc-kicker" style="color:var(--ink-soft)">ESPECIALIDADES · 7 FRENTES</span>
+            <h2 class="hc-h2" style="max-width:16ch">O que eu coloco no ar.</h2>
+            <p class="hc-plugin-desc" style="max-width:46ch">Gire nas setas ao lado ou deslize no celular e veja todas as 7 especialidades.</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+            ${boltCapsuleSvg()}
+            <div class="hc-carousel-controls">
+              <button type="button" class="hc-arrow-btn" id="spec-prev" aria-label="Voltar item">${iconSvg("left")}</button>
+              <span class="hc-counter" id="spec-counter">1 / ${SPECIALTIES.length}</span>
+              <button type="button" class="hc-arrow-btn" id="spec-next" aria-label="Avançar item">${iconSvg("right")}</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="hc-track hc-track--specialties" id="spec-track">
+          ${SPECIALTIES.map(
+            (sp, i) => `
+            <article class="hc-plugin-card">
+              <div class="hc-plugin-top">
+                <div class="hc-plugin-title-row">
+                  <span>${iconSvg(SPEC_ICONS[i % SPEC_ICONS.length])}</span>
+                  <span>${esc(sp.title)}</span>
+                </div>
+                <p class="hc-plugin-desc">${esc(sp.summary)}</p>
+              </div>
+              <div class="hc-plugin-foot">
+                <span class="hc-plugin-meta">${esc(sp.tag)}</span>
+              </div>
+            </article>
+          `
+          ).join("")}
+        </div>
+
+        <div class="hc-summary-bar">
+          <div class="hc-summary-col">
+            <h3 class="hc-h3" style="font-size:1.7rem">Atuação ponta a ponta ou por frente específica.</h3>
+          </div>
+          <div class="hc-summary-col">
+            <span style="color:var(--ink)">${iconSvg("compass")}</span>
+            <div style="font-size:1.05rem;font-weight:500">Ferramentas &amp; Stack</div>
+            <p class="hc-plugin-desc">GA4, Search Console, Clarity, Google Meu Negócio, HubSpot, RD Station, Figma, ClickUp, Meta Ads, Google Ads e Skills/MCP.</p>
+          </div>
+          <div class="hc-summary-col">
+            <span style="color:var(--ink)">${iconSvg("spark")}</span>
+            <div style="font-size:1.05rem;font-weight:500">Foco em conversão</div>
+            <p class="hc-plugin-desc">Páginas, campanhas e textos desenhados visando reduzir custo por lead e aumentar vendas.</p>
+          </div>
+        </div>
+
+        <div>
+          <a class="hc-btn-amber" href="especialidades.html">
+            <span>Ver detalhes das 7 especialidades</span>
+            ${iconSvg("arrow")}
+          </a>
+        </div>
+      </section>
+
+      <!-- PORTFÓLIO DIRETO CAROUSEL (All 23 Items) -->
+      <section class="hc-section" id="portfolio-home" style="padding-bottom:64px">
+        <div class="hc-carousel-head" style="margin-bottom:24px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span class="hc-kicker">PORTFÓLIO DIRETO · 23 PROJETOS</span>
+            <h2 class="hc-h2">Acesso rápido aos projetos.</h2>
+            <p class="hc-lead">Clique e vá direto ao trabalho publicado.</p>
+          </div>
+          <div class="hc-carousel-controls">
+            <button type="button" class="hc-arrow-btn" id="port-prev" aria-label="Voltar item">${iconSvg("left")}</button>
+            <span class="hc-counter" id="port-counter">1 / ${PORTFOLIO_BUTTONS.length}</span>
+            <button type="button" class="hc-arrow-btn" id="port-next" aria-label="Avançar item">${iconSvg("right")}</button>
+          </div>
+        </div>
+
+        <div class="hc-track hc-track--portfolio" id="port-track">
+          ${PORTFOLIO_BUTTONS.map(
+            (item) => `
+            <a class="hc-plugin-card" style="background:var(--bg-card)" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">
+              <div class="hc-plugin-top">
+                <span class="hc-plugin-meta">#${item.id} · ${esc(item.meta)}</span>
+                <div class="hc-plugin-title-row" style="font-size:1rem">${esc(item.label)}</div>
+              </div>
+              <div class="hc-plugin-foot">
+                <span class="hc-pill-tag">Abrir projeto ${iconSvg("ext")}</span>
+              </div>
+            </a>
+          `
+          ).join("")}
+        </div>
+
+        <div style="margin-top:24px">
+          <a class="hc-btn-amber" href="portfolio.html">
+            <span>Abrir página com filtros e busca</span>
+            ${iconSvg("arrow")}
+          </a>
+        </div>
+      </section>
     </div>
   `;
 
-  startTyping(document.getElementById("hero-typing"));
+  startHeroWordRotation();
+  mountWizardForm("hero-wizard-card");
   bindCarousel("spec-track", "spec-prev", "spec-next", "spec-counter", SPECIALTIES.length);
   bindCarousel("port-track", "port-prev", "port-next", "port-counter", PORTFOLIO_BUTTONS.length);
 }
 
 function renderQuemSou(root) {
   root.innerHTML = `
-    <div class="content-backdrop" style="border-top:none">
-      <div class="container">
-        <section class="glass-card" style="display:flex;flex-direction:column;gap:20px">
-          <div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap">
-            <div class="portrait-wrap" style="width:104px;height:104px;margin-bottom:0;flex-shrink:0">
-              <div class="portrait-glow"></div>
-              <img class="portrait-img" src="${esc(PROFILE.photo)}" alt="${esc(PROFILE.name)}">
+    <div class="hc-container">
+      <section class="hc-section">
+        <div class="hc-bento-grid">
+          <article class="hc-card-light" style="justify-content:center;align-items:flex-start;gap:18px">
+            <div style="display:flex;align-items:center;gap:16px">
+              <img src="${esc(PROFILE.photo)}" alt="${esc(PROFILE.name)}" style="width:84px;height:84px;border-radius:9999px;object-fit:cover;object-position:center 18%;border:2px solid var(--ink)">
+              <div>
+                <span class="hc-kicker">QUEM SOU EU</span>
+                <h1 class="hc-h2" style="margin-top:4px">${esc(PROFILE.name)}</h1>
+                <p class="hc-plugin-meta">${esc(PROFILE.location)}</p>
+              </div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:6px;min-width:0;flex:1">
-              <span class="section-eyebrow">Quem Sou Eu</span>
-              <h1 class="section-title">${esc(PROFILE.name)}</h1>
-              <p class="card-text" style="color:var(--text-muted)">${esc(PROFILE.role)}</p>
+            <p class="hc-lead" style="color:var(--ink-soft)">${esc(PROFILE.intro)}</p>
+            <p class="hc-plugin-desc">Tem empresa com tráfego caro, página lenta ou texto que não convence ninguém a clicar. Meu trabalho resolve exatamente essa ponta: diagnóstico real de funil, construção de páginas rápidas, SEO técnico, Google Meu Negócio e copy direta ao ponto.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:12px">
+              <a class="hc-btn-amber" href="portfolio.html"><span>Ver Portfólio (23)</span>${iconSvg("arrow")}</a>
+              <a class="hc-btn-outline-light" href="experiencia.html">Formação &amp; Experiência</a>
             </div>
-          </div>
-          <p class="card-text">${esc(PROFILE.intro)}</p>
-          <p class="card-text">Tem empresa com tráfego caro, página lenta ou texto que não convence ninguém a clicar. Meu trabalho resolve exatamente essa ponta: diagnóstico real de funil, construção de páginas rápidas, SEO técnico, Google Meu Negócio e copy direta ao ponto.</p>
-          <div style="display:flex;flex-wrap:wrap;gap:12px">
-            <a class="pill-btn pill-btn--accent pill-btn--sm" href="portfolio.html">Ver Portfólio (23)</a>
-            <a class="pill-btn pill-btn--sm" href="experiencia.html">Formação &amp; Experiência</a>
-          </div>
-        </section>
-
-        <section class="grid-2">
-          <article class="glass-card">
-            <span class="section-eyebrow">Produto &amp; Dados</span>
-            <h2 class="card-title">Lado Analítico</h2>
-            <ul class="clean-list">
-              <li>Leitura de caminho de compra e funil no GA4, Search Console e Microsoft Clarity.</li>
-              <li>Ciclos de Testes A/B em anúncios e páginas visando derrubar CPA.</li>
-              <li>Product Ownership: requisitos, User Stories, backlog no ClickUp e validação no Figma.</li>
-              <li>CRM e nutrição automatizada em HubSpot e RD Station.</li>
-            </ul>
           </article>
 
-          <article class="glass-card">
-            <span class="section-eyebrow">Criação &amp; Escala</span>
-            <h2 class="card-title">Lado Criativo</h2>
-            <ul class="clean-list">
-              <li>Mais de 600 artigos publicados em português e inglês.</li>
-              <li>Autor do conceito oficial do Forró Caju 2025 (Prefeitura de Aracaju).</li>
-              <li>Campanhas, slogans, roteiros de vídeo/TV e ghostwriting.</li>
-              <li>Operação prática no Brasil e nos EUA, incluindo contas de iGaming.</li>
-            </ul>
-          </article>
-        </section>
+          <div class="hc-bento-left">
+            <article class="hc-card-light">
+              <span class="hc-pill-tag">Produto &amp; Dados</span>
+              <h2 class="hc-h3">Lado Analítico</h2>
+              <p class="hc-plugin-desc">Leitura de caminho de compra e funil no GA4, Search Console e Microsoft Clarity. Ciclos de Testes A/B, levantamento de requisitos, backlog no ClickUp, validação no Figma e automação em HubSpot e RD Station.</p>
+              ${globeWatermarkSvg()}
+            </article>
 
-        <section class="glass-card">
-          <span class="section-eyebrow">Contas &amp; Projetos</span>
-          <h2 class="card-title">Marcas e frentes em que já atuei</h2>
-          <div class="tag-row">
-            ${BRANDS.map((b) => `<span class="tag-pill">${esc(b)}</span>`).join("")}
+            <article class="hc-card-light">
+              <span class="hc-pill-tag">Criação &amp; Escala</span>
+              <h2 class="hc-h3">Lado Criativo</h2>
+              <p class="hc-plugin-desc">Mais de 600 artigos publicados em português e inglês, autor do conceito oficial do Forró Caju 2025, roteiros de vídeo/TV, ghostwriting e campanhas no Brasil e nos EUA.</p>
+              ${globeWatermarkSvg()}
+            </article>
           </div>
-        </section>
-      </div>
+        </div>
+
+        <div class="hc-card-light" style="margin-top:20px">
+          <span class="hc-kicker">CONTAS &amp; ECOSSISTEMAS</span>
+          <h2 class="hc-h3">Marcas e projetos em que já atuei</h2>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">
+            ${BRANDS.map((b) => `<span class="hc-btn-outline-light" style="padding:6px 14px;min-height:34px">${esc(b)}</span>`).join("")}
+          </div>
+        </div>
+      </section>
     </div>
   `;
 }
 
 function renderEspecialidades(root) {
   root.innerHTML = `
-    <div class="content-backdrop" style="border-top:none">
-      <div class="container">
-        <section class="section-head">
-          <span class="section-eyebrow">Especialidades</span>
-          <h1 class="section-title">Do código da página ao texto que fecha a venda.</h1>
-          <p class="section-lead">Atuação completa em estratégia digital, construção de sites, Google Meu Negócio, SEO/GEO, CRO e copywriting de performance.</p>
-        </section>
+    <div class="hc-container">
+      <section class="hc-mid-block">
+        <div class="hc-carousel-head">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span class="hc-kicker" style="color:var(--ink-soft)">ESPECIALIDADES</span>
+            <h1 class="hc-h1" style="max-width:18ch">Do código da página ao texto que fecha a venda.</h1>
+            <p class="hc-lead" style="color:var(--ink-soft);max-width:54ch">Atuação completa em estratégia digital, construção de sites, Google Meu Negócio, SEO/GEO, CRO e copywriting de performance.</p>
+          </div>
+          ${boltCapsuleSvg()}
+        </div>
 
-        <section class="grid-2">
+        <div class="hc-grid-3">
           ${SPECIALTIES.map(
-            (sp) => `
-            <article class="glass-card">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-                <span class="tag-pill">${esc(sp.tag)}</span>
+            (sp, i) => `
+            <article class="hc-plugin-card" style="min-height:300px">
+              <div class="hc-plugin-top">
+                <div class="hc-plugin-title-row">
+                  <span>${iconSvg(SPEC_ICONS[i % SPEC_ICONS.length])}</span>
+                  <span>${esc(sp.title)}</span>
+                </div>
+                <p class="hc-plugin-desc">${esc(sp.summary)}</p>
+                <ul style="padding-left:16px;margin-top:6px;display:flex;flex-direction:column;gap:6px;font-size:0.82rem;color:var(--ink-soft)">
+                  ${sp.bullets.map((b) => `<li>${esc(b)}</li>`).join("")}
+                </ul>
               </div>
-              <h2 class="card-title">${esc(sp.title)}</h2>
-              <p class="card-text">${esc(sp.summary)}</p>
-              <ul class="clean-list">
-                ${sp.bullets.map((b) => `<li>${esc(b)}</li>`).join("")}
-              </ul>
+              <div class="hc-plugin-foot">
+                <span class="hc-plugin-meta">${esc(sp.tag)}</span>
+              </div>
             </article>
           `
           ).join("")}
-        </section>
+        </div>
+      </section>
 
-        <section class="glass-card">
-          <span class="section-eyebrow">Ferramentas &amp; Stack</span>
-          <h2 class="card-title">O que uso no dia a dia</h2>
-          <div class="tag-row">
-            ${STACK_LIST.map((tool) => `<span class="tag-pill">${esc(tool)}</span>`).join("")}
-          </div>
-        </section>
-      </div>
+      <section class="hc-dark-block">
+        <span class="hc-pill-tag hc-pill-tag--white">FERRAMENTAS &amp; STACK</span>
+        <h2 class="hc-h2" style="color:#FFFFFF">O que uso no dia a dia.</h2>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          ${STACK_LIST.map((tool) => `<span class="hc-btn-outline-dark" style="padding:8px 16px;min-height:38px">${esc(tool)}</span>`).join("")}
+        </div>
+      </section>
     </div>
   `;
 }
 
 function renderExperiencia(root) {
   root.innerHTML = `
-    <div class="content-backdrop" style="border-top:none">
-      <div class="container">
-        <section class="section-head">
-          <span class="section-eyebrow">Trajetória Profissional</span>
-          <h1 class="section-title">Formação &amp; Experiência</h1>
-          <p class="section-lead">Agências, coordenação de marketing e produto, mercado norte-americano, setor público e consultoria.</p>
-        </section>
+    <div class="hc-container">
+      <section class="hc-section">
+        <div class="hc-section-head">
+          <span class="hc-kicker">TRAJETÓRIA PROFISSIONAL</span>
+          <h1 class="hc-h1">Formação &amp; Experiência.</h1>
+          <p class="hc-lead">Agências, coordenação de marketing e produto, mercado norte-americano, setor público e consultoria.</p>
+        </div>
 
-        <section class="glass-card">
-          <span class="section-eyebrow">Formação Acadêmica</span>
-          <h2 class="card-title">${esc(EDUCATION.course)}</h2>
-          <p class="card-text" style="color:var(--accent-indigo)">${esc(EDUCATION.institution)} · ${esc(EDUCATION.period)}</p>
-          <p class="card-text">${esc(EDUCATION.note)}</p>
-        </section>
+        <article class="hc-dark-block" style="margin-top:0">
+          <span class="hc-pill-tag hc-pill-tag--white">FORMAÇÃO ACADÊMICA · ${esc(EDUCATION.period)}</span>
+          <h2 class="hc-h2" style="color:#FFFFFF">${esc(EDUCATION.course)}</h2>
+          <p style="font-size:1.1rem;color:var(--amber)">${esc(EDUCATION.institution)}</p>
+          <p style="color:var(--muted-light);max-width:60ch">${esc(EDUCATION.note)}</p>
+        </article>
 
-        <section class="timeline" aria-label="Histórico de experiências">
+        <div class="hc-grid-2">
           ${EXPERIENCES.map(
-            (exp) => `
-            <article class="timeline-item glass-card">
-              <span class="timeline-dot" aria-hidden="true"></span>
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-                <h2 class="card-title">${esc(exp.company)}</h2>
-                <span class="tag-pill">${esc(exp.role)}</span>
+            (exp, idx) => `
+            <article class="hc-plugin-card" style="background:var(--bg-card)">
+              <div class="hc-plugin-top">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                  <span class="hc-kicker">0${idx + 1}</span>
+                  <span class="hc-pill-tag">${esc(exp.role)}</span>
+                </div>
+                <h2 class="hc-h3" style="margin-top:6px">${esc(exp.company)}</h2>
+                <p class="hc-plugin-desc">${esc(exp.summary)}</p>
+                <ul style="padding-left:16px;margin-top:6px;display:flex;flex-direction:column;gap:6px;font-size:0.84rem;color:var(--ink-soft)">
+                  ${exp.bullets.map((b) => `<li>${esc(b)}</li>`).join("")}
+                </ul>
               </div>
-              <p class="card-text">${esc(exp.summary)}</p>
-              <ul class="clean-list">
-                ${exp.bullets.map((b) => `<li>${esc(b)}</li>`).join("")}
-              </ul>
             </article>
           `
           ).join("")}
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
   `;
 }
@@ -357,30 +678,30 @@ function renderPortfolio(root) {
   let query = "";
 
   root.innerHTML = `
-    <div class="content-backdrop" style="border-top:none">
-      <div class="container container--wide">
-        <section class="section-head">
-          <span class="section-eyebrow">Portfólio Completo</span>
-          <h1 class="section-title">Trabalhos publicados (${PORTFOLIO_BUTTONS.length})</h1>
-        </section>
+    <div class="hc-container">
+      <section class="hc-section">
+        <div class="hc-section-head">
+          <span class="hc-kicker">PORTFÓLIO COMPLETO</span>
+          <h1 class="hc-h1">Trabalhos publicados (${PORTFOLIO_BUTTONS.length})</h1>
+        </div>
 
-        <section style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
-          <div class="filter-pills" id="port-filters">
+        <div class="hc-filter-row">
+          <div class="hc-filter-pills" id="port-filters">
             ${PORTFOLIO_CATEGORIES.map((c) => {
               const count =
                 c.id === "todos"
                   ? PORTFOLIO_BUTTONS.length
                   : PORTFOLIO_BUTTONS.filter((b) => b.category === c.id).length;
-              return `<button type="button" class="filter-pill ${c.id === activeCat ? "is-active" : ""}" data-cat="${c.id}">${esc(c.label)} (${count})</button>`;
+              return `<button type="button" class="hc-filter-btn ${c.id === activeCat ? "is-active" : ""}" data-cat="${c.id}">${esc(c.label)} (${count})</button>`;
             }).join("")}
           </div>
-          <div style="flex:0 1 280px;width:100%">
-            <input type="search" id="port-search" class="input-field" placeholder="Buscar projeto ou setor...">
+          <div style="flex:0 1 300px;width:100%">
+            <input type="search" id="port-search" class="hc-input" placeholder="Buscar projeto ou setor...">
           </div>
-        </section>
+        </div>
 
-        <section class="portfolio-links-grid" id="port-grid"></section>
-      </div>
+        <div class="hc-grid-3" id="port-grid"></div>
+      </section>
     </div>
   `;
 
@@ -398,9 +719,9 @@ function renderPortfolio(root) {
 
     if (list.length === 0) {
       grid.innerHTML = `
-        <div class="glass-card" style="grid-column:1 / -1;align-items:center;text-align:center">
-          <p class="card-title">Nenhum botão encontrado com "${esc(query)}".</p>
-          <button type="button" class="pill-btn pill-btn--sm" id="port-reset">Mostrar todos os ${PORTFOLIO_BUTTONS.length} botões</button>
+        <div class="hc-card-light" style="grid-column:1 / -1;align-items:center;text-align:center">
+          <h3 class="hc-h3">Nenhum projeto encontrado com "${esc(query)}".</h3>
+          <button type="button" class="hc-btn-amber" id="port-reset">Mostrar todos os ${PORTFOLIO_BUTTONS.length} projetos</button>
         </div>
       `;
       document.getElementById("port-reset")?.addEventListener("click", () => {
@@ -417,12 +738,14 @@ function renderPortfolio(root) {
     grid.innerHTML = list
       .map(
         (item) => `
-      <a class="portfolio-link-btn" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">
-        <div class="portfolio-link-info">
-          <span class="portfolio-link-title">${esc(item.label)}</span>
-          <span class="portfolio-link-meta">${esc(item.meta)}</span>
+      <a class="hc-plugin-card" style="background:var(--bg-card);min-height:210px" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">
+        <div class="hc-plugin-top">
+          <span class="hc-plugin-meta">#${item.id} · ${esc(item.meta)}</span>
+          <div class="hc-plugin-title-row">${esc(item.label)}</div>
         </div>
-        <span class="portfolio-link-arrow" aria-hidden="true">${iconSvg("arrow")}</span>
+        <div class="hc-plugin-foot">
+          <span class="hc-pill-tag">Abrir projeto ${iconSvg("ext")}</span>
+        </div>
       </a>
     `
       )
@@ -449,86 +772,52 @@ function renderPortfolio(root) {
 
 function renderContato(root) {
   root.innerHTML = `
-    <div class="content-backdrop" style="border-top:none">
-      <div class="container">
-        <section class="section-head">
-          <span class="section-eyebrow">Contato</span>
-          <h1 class="section-title">Vamos tirar seu projeto do papel.</h1>
-          <p class="section-lead">Escolha o canal mais prático ou mande sua mensagem direto no meu WhatsApp.</p>
-        </section>
+    <div class="hc-container">
+      <section class="hc-hero">
+        <div class="hc-hero-left">
+          <span class="hc-kicker">CONTATO DIRETO</span>
+          <h1 class="hc-h1">Vamos tirar seu projeto do papel.</h1>
+          <p class="hc-lead">Escolha o canal mais prático ou responda as 4 etapas ao lado e fale comigo no WhatsApp.</p>
 
-        <section class="grid-3">
-          <article class="glass-card">
-            <span class="section-eyebrow">WhatsApp</span>
-            <h2 class="card-title">${esc(PROFILE.whatsappDisplay)}</h2>
-            <p class="card-text">Resposta rápida sobre projetos, sites, SEO ou vagas.</p>
-            <a class="pill-btn pill-btn--accent pill-btn--sm" style="margin-top:auto" href="${esc(PROFILE.whatsappUrl)}" target="_blank" rel="noopener noreferrer">Chamar no WhatsApp</a>
-          </article>
+          <div class="hc-grid-2" style="width:100%">
+            <article class="hc-card-light" style="padding:22px">
+              <span class="hc-kicker">WHATSAPP</span>
+              <h2 class="hc-h3" style="margin-top:4px">${esc(PROFILE.whatsappDisplay)}</h2>
+              <div style="margin-top:10px">
+                <a class="hc-btn-amber" href="${esc(PROFILE.whatsappUrl)}" target="_blank" rel="noopener noreferrer">
+                  <span>Chamar agora</span>
+                  ${iconSvg("arrow")}
+                </a>
+              </div>
+            </article>
 
-          <article class="glass-card">
-            <span class="section-eyebrow">E-mail</span>
-            <h2 class="card-title" style="font-size:1.05rem;word-break:break-all">${esc(PROFILE.email)}</h2>
-            <p class="card-text">Envio de escopos, propostas e documentos.</p>
-            <div style="display:flex;gap:8px;margin-top:auto">
-              <a class="pill-btn pill-btn--sm" style="flex:1" href="mailto:${esc(PROFILE.email)}">Abrir e-mail</a>
-              <button type="button" class="pill-btn pill-btn--sm" id="copy-email-btn">Copiar</button>
-            </div>
-          </article>
-
-          <article class="glass-card">
-            <span class="section-eyebrow">Redes</span>
-            <h2 class="card-title">LinkedIn &amp; Behance</h2>
-            <p class="card-text">Conexão profissional e acervo criativo de 34 projetos.</p>
-            <div style="display:flex;gap:8px;margin-top:auto">
-              <a class="pill-btn pill-btn--sm" style="flex:1" href="${esc(PROFILE.linkedin)}" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-              <a class="pill-btn pill-btn--sm" style="flex:1" href="${esc(PROFILE.behance)}" target="_blank" rel="noopener noreferrer">Behance</a>
-            </div>
-          </article>
-        </section>
-
-        <section class="glass-card">
-          <span class="section-eyebrow">Mensagem Rápida</span>
-          <h2 class="card-title">Mandar direto no WhatsApp</h2>
-          <div class="grid-2">
-            <input type="text" id="c-name" class="input-field" placeholder="Seu nome">
-            <input type="text" id="c-topic" class="input-field" placeholder="Assunto (ex: site, SEO, Google Meu Negócio, copy)">
+            <article class="hc-card-light" style="padding:22px">
+              <span class="hc-kicker">E-MAIL</span>
+              <h2 class="hc-h3" style="font-size:1.05rem;word-break:break-all;margin-top:4px">${esc(PROFILE.email)}</h2>
+              <div style="display:flex;gap:8px;margin-top:10px">
+                <a class="hc-btn-outline-light" href="mailto:${esc(PROFILE.email)}">Abrir</a>
+                <button type="button" class="hc-btn-outline-light" id="copy-email-btn">Copiar</button>
+              </div>
+            </article>
           </div>
-          <textarea id="c-msg" class="textarea-field" placeholder="Conte em poucas linhas o que precisa resolver..."></textarea>
-          <div style="display:flex;flex-wrap:wrap;gap:12px">
-            <a class="pill-btn pill-btn--accent" id="c-send-wa" href="${esc(PROFILE.whatsappUrl)}" target="_blank" rel="noopener noreferrer">Enviar no WhatsApp</a>
-            <button type="button" class="pill-btn" id="c-copy-btn">Copiar texto</button>
+
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <a class="hc-btn-outline-light" href="${esc(PROFILE.linkedin)}" target="_blank" rel="noopener noreferrer">LinkedIn ${iconSvg("ext")}</a>
+            <a class="hc-btn-outline-light" href="${esc(PROFILE.behance)}" target="_blank" rel="noopener noreferrer">Behance (34 projetos) ${iconSvg("ext")}</a>
           </div>
-        </section>
-      </div>
+        </div>
+
+        <div class="hc-hero-right">
+          <div class="hc-sculpture-bg">${heroSculptureSvg()}</div>
+          <div class="hc-glass-form" id="contact-wizard-card"></div>
+        </div>
+      </section>
     </div>
   `;
 
-  function buildMsg() {
-    const n = document.getElementById("c-name")?.value.trim();
-    const t = document.getElementById("c-topic")?.value.trim();
-    const m = document.getElementById("c-msg")?.value.trim();
-    const parts = ["Olá Paulo Renato!"];
-    if (n) parts.push(`Meu nome é ${n}.`);
-    if (t) parts.push(`Assunto: ${t}.`);
-    if (m) parts.push(m);
-    return parts.join("\n");
-  }
-
-  function updateLink() {
-    const btn = document.getElementById("c-send-wa");
-    if (btn) btn.setAttribute("href", `${PROFILE.whatsappUrl}?text=${encodeURIComponent(buildMsg())}`);
-  }
-
-  ["c-name", "c-topic", "c-msg"].forEach((id) => {
-    document.getElementById(id)?.addEventListener("input", updateLink);
-  });
-
+  mountWizardForm("contact-wizard-card");
   document.getElementById("copy-email-btn")?.addEventListener("click", () => {
     copyText(PROFILE.email, "E-mail copiado!");
-  });
-
-  document.getElementById("c-copy-btn")?.addEventListener("click", () => {
-    copyText(buildMsg(), "Mensagem copiada!");
   });
 }
 
