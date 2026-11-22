@@ -49,14 +49,61 @@ function startTyping(el) {
   tick();
 }
 
-function renderHome(root) {
-  const featured = [
-    PORTFOLIO_BUTTONS[20],
-    PORTFOLIO_BUTTONS[7],
-    PORTFOLIO_BUTTONS[2],
-    PORTFOLIO_BUTTONS[3]
-  ];
+function bindCarousel(trackId, prevBtnId, nextBtnId, counterId, totalCount) {
+  const track = document.getElementById(trackId);
+  const prevBtn = document.getElementById(prevBtnId);
+  const nextBtn = document.getElementById(nextBtnId);
+  const counter = document.getElementById(counterId);
+  if (!track || !prevBtn || !nextBtn) return;
 
+  function getStep() {
+    const firstCard = track.firstElementChild;
+    if (!firstCard) return 320;
+    const gap = parseFloat(getComputedStyle(track).columnGap || getComputedStyle(track).gap || "18") || 18;
+    return firstCard.getBoundingClientRect().width + gap;
+  }
+
+  function updateCounter() {
+    if (!counter) return;
+    const step = getStep();
+    const maxScroll = Math.max(1, track.scrollWidth - track.clientWidth);
+    if (track.scrollLeft >= maxScroll - 8) {
+      counter.textContent = `${totalCount} / ${totalCount}`;
+      return;
+    }
+    const idx = Math.min(totalCount, Math.max(1, Math.round(track.scrollLeft / step) + 1));
+    counter.textContent = `${idx} / ${totalCount}`;
+  }
+
+  nextBtn.addEventListener("click", () => {
+    const maxScroll = track.scrollWidth - track.clientWidth;
+    if (track.scrollLeft >= maxScroll - 8) {
+      track.scrollTo({ left: 0, behavior: "smooth" });
+    } else {
+      track.scrollBy({ left: getStep(), behavior: "smooth" });
+    }
+  });
+
+  prevBtn.addEventListener("click", () => {
+    const maxScroll = track.scrollWidth - track.clientWidth;
+    if (track.scrollLeft <= 8) {
+      track.scrollTo({ left: maxScroll, behavior: "smooth" });
+    } else {
+      track.scrollBy({ left: -getStep(), behavior: "smooth" });
+    }
+  });
+
+  track.addEventListener("scroll", updateCounter, { passive: true });
+  window.addEventListener("resize", updateCounter);
+  updateCounter();
+}
+
+function chevronSvg(dir) {
+  const pts = dir === "left" ? "15 18 9 12 15 6" : "9 18 15 12 9 6";
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="${pts}"/></svg>`;
+}
+
+function renderHome(root) {
   root.innerHTML = `
     <section class="hero-stage" aria-label="Apresentação">
       <div class="portrait-wrap">
@@ -97,38 +144,52 @@ function renderHome(root) {
         </section>
 
         <section style="display:flex;flex-direction:column;gap:20px">
-          <div class="section-head">
-            <span class="section-eyebrow">Especialidades</span>
-            <h2 class="section-title">O que eu coloco no ar</h2>
+          <div class="carousel-header">
+            <div class="section-head">
+              <span class="section-eyebrow">Especialidades</span>
+              <h2 class="section-title">O que eu coloco no ar</h2>
+            </div>
+            <div class="carousel-controls">
+              <button type="button" class="carousel-btn" id="spec-prev" aria-label="Voltar item">${chevronSvg("left")}</button>
+              <span class="carousel-counter" id="spec-counter">1 / ${SPECIALTIES.length}</span>
+              <button type="button" class="carousel-btn" id="spec-next" aria-label="Avançar item">${chevronSvg("right")}</button>
+            </div>
           </div>
-          <div class="grid-3">
-            ${SPECIALTIES.slice(0, 3)
-              .map(
-                (sp) => `
+
+          <div class="carousel-track carousel-track--specialties" id="spec-track">
+            ${SPECIALTIES.map(
+              (sp) => `
               <article class="glass-card">
                 <span class="tag-pill" style="align-self:flex-start">${esc(sp.tag)}</span>
                 <h3 class="card-title">${esc(sp.title)}</h3>
                 <p class="card-text">${esc(sp.summary)}</p>
               </article>
             `
-              )
-              .join("")}
+            ).join("")}
           </div>
+
           <div>
-            <a class="pill-btn pill-btn--sm" href="especialidades.html">Ver todas as 7 especialidades</a>
+            <a class="pill-btn pill-btn--sm" href="especialidades.html">Ver stack e detalhes</a>
           </div>
         </section>
 
         <section style="display:flex;flex-direction:column;gap:20px">
-          <div class="section-head">
-            <span class="section-eyebrow">Portfólio Direto</span>
-            <h2 class="section-title">Acesso rápido aos projetos</h2>
-            <p class="section-lead">Clique e vá direto ao trabalho publicado, sem intermediários.</p>
+          <div class="carousel-header">
+            <div class="section-head">
+              <span class="section-eyebrow">Portfólio Direto</span>
+              <h2 class="section-title">Acesso rápido aos projetos</h2>
+              <p class="section-lead">Clique e vá direto ao trabalho publicado.</p>
+            </div>
+            <div class="carousel-controls">
+              <button type="button" class="carousel-btn" id="port-prev" aria-label="Voltar item">${chevronSvg("left")}</button>
+              <span class="carousel-counter" id="port-counter">1 / ${PORTFOLIO_BUTTONS.length}</span>
+              <button type="button" class="carousel-btn" id="port-next" aria-label="Avançar item">${chevronSvg("right")}</button>
+            </div>
           </div>
-          <div class="portfolio-links-grid">
-            ${featured
-              .map(
-                (item) => `
+
+          <div class="carousel-track carousel-track--portfolio" id="port-track">
+            ${PORTFOLIO_BUTTONS.map(
+              (item) => `
               <a class="portfolio-link-btn" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">
                 <div class="portfolio-link-info">
                   <span class="portfolio-link-title">${esc(item.label)}</span>
@@ -137,11 +198,11 @@ function renderHome(root) {
                 <span class="portfolio-link-arrow" aria-hidden="true">${iconSvg("arrow")}</span>
               </a>
             `
-              )
-              .join("")}
+            ).join("")}
           </div>
+
           <div>
-            <a class="pill-btn pill-btn--accent pill-btn--sm" href="portfolio.html">Abrir todos os 23 links do portfólio</a>
+            <a class="pill-btn pill-btn--accent pill-btn--sm" href="portfolio.html">Abrir página com filtros e busca</a>
           </div>
         </section>
       </div>
@@ -149,6 +210,8 @@ function renderHome(root) {
   `;
 
   startTyping(document.getElementById("hero-typing"));
+  bindCarousel("spec-track", "spec-prev", "spec-next", "spec-counter", SPECIALTIES.length);
+  bindCarousel("port-track", "port-prev", "port-next", "port-counter", PORTFOLIO_BUTTONS.length);
 }
 
 function renderQuemSou(root) {
