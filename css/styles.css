@@ -890,3 +890,92 @@ html[data-theme="light"] .pill-btn--secondary {
   font-weight: 500;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
+
+/* =========================================================
+   HOME CAROUSELS
+   ========================================================= */
+.carousel-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.carousel-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.carousel-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease, transform 0.14s ease;
+}
+
+.carousel-btn:hover {
+  border-color: var(--accent-indigo);
+  background: var(--bg-card-hover);
+  box-shadow: var(--shadow-glow);
+  transform: scale(1.04);
+}
+
+.carousel-counter {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  min-width: 52px;
+  text-align: center;
+}
+
+.carousel-track {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding: 4px 2px 10px 2px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel-track--specialties .glass-card {
+  flex: 0 0 calc((100% - 36px) / 3);
+  scroll-snap-align: start;
+}
+
+.carousel-track--portfolio .portfolio-link-btn {
+  flex: 0 0 calc((100% - 18px) / 2);
+  scroll-snap-align: start;
+}
+
+@media (max-width: 859px) {
+  .carousel-track--specialties .glass-card {
+    flex: 0 0 calc((100% - 18px) / 2);
+  }
+}
+
+@media (max-width: 599px) {
+  .carousel-track--specialties .glass-card {
+    flex: 0 0 86%;
+  }
+}
+
+@media (max-width: 767px) {
+  .carousel-track--portfolio .portfolio-link-btn {
+    flex: 0 0 88%;
+  }
+}
